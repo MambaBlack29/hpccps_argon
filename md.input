@@ -1,0 +1,13 @@
+1600                   # no. of molecules                      ???change??? 
+1                     # no. of atoms in each molecule 
+1.0                   # timestep in fs   
+600                   #  total no. of MD steps  
+0                     #  no. of equilibration steps 
+85.0                  # Temperature  
+argon_1600.xyz         # input coordinates xyz format           ???change???
+42.3212               # cubic box  dimention                   ???change???
+3.405                 #  Sigma  in Angstrom 
+0.238062966           #   Epsilon in temperature units  kcal/mol 
+10.0                  #  Rcut 
+39.948                #  Ar mass in amu  
+
