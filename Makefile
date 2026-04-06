@@ -12,5 +12,5 @@ $(TARGET) : $(OBJECTS)
 .PHONY :  clean 
 
 clean : 
-	rm -f *.o *.mod *.run
+	rm -f *.o *.mod $(TARGET)
 
