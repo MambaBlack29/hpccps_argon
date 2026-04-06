@@ -1,5 +1,6 @@
 subroutine force_calc(TotAtom,Box,Rcut,r,Sig,Eps,Force,PE)
     use general, only: dp, atom1, atom2
+    use omp_lib
     implicit none
     integer, intent(in) :: TotAtom
     real(kind=dp), intent(in) :: r(TotAtom, 3)
@@ -11,7 +12,7 @@ subroutine force_calc(TotAtom,Box,Rcut,r,Sig,Eps,Force,PE)
     R2cut = Rcut*Rcut
 
     ! calculating Ecut at Rcut
-    fac2 = Sig*Sig/R2cut
+    fac2 = Sig*Sig/R2cut 
     fac6 = fac2*fac2*fac2
     Ecut = 4.d0*Eps*fac6*(fac6-1)
 
@@ -20,25 +21,27 @@ subroutine force_calc(TotAtom,Box,Rcut,r,Sig,Eps,Force,PE)
 
     PE = 0.d0
     Force = 0.d0
+    !$omp parallel do reduction(+:PE, Force) private(atom1,atom2,dr,r2,fac2,fac6,df,fc)
     do atom1 = 1, TotAtom - 1
         do atom2 = atom1 + 1, TotAtom
             dr = r(atom1, :) - r(atom2, :)
             dr = dr - Box*anint(dr/Box)
             r2 = dot_product(dr, dr)
-            if (r2 <= R2cut) then          ! r2cut  is square of rcut
+            if (r2 > 0.d0 .and. r2 <= R2cut) then          ! r2cut  is square of rcut
                 r2 = 1/r2
                 fac2 = r2*Sig*Sig
                 fac6 = fac2*fac2*fac2
                 df = 48.d0*Eps*r2*fac6*(fac6-0.5d0)
-                fc(1) = df*dr(1)
-                fc(2) = df*dr(2)
-                fc(3) = df*dr(3)
+                fc = df*dr
+                
                 Force(atom1, :) = Force(atom1, :) + fc(:)
                 Force(atom2, :) = Force(atom2, :) - fc(:)
+
                 PE = PE + 4.d0*Eps*fac6*(fac6-1) - Ecut        !shifted to zero at cutoff
             endif
         enddo
     enddo
+    !$omp end parallel do
 
 !print
 

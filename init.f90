@@ -55,16 +55,16 @@ subroutine initialize(TotAtom,CoorFileName,Temp,Mass,Box,r,v,AtomLabel)
 
 ! zeroing the linear momentum  and scaling 
 
-  sumv2 = 0.d0
-  do i = 1, TotAtom
-    v(i, :) = (v(i, :) - sumv)
-    sumv2 = sumv2 + dot_product(v(i, :), v(i, :))
-  enddo
+    sumv2 = 0.d0
+    do i = 1, TotAtom
+        v(i, :) = (v(i, :) - sumv)
+        sumv2 = sumv2 + dot_product(v(i, :), v(i, :))
+    enddo
 
-  sumv2 = sumv2*Mass
+    sumv2 = sumv2*Mass
 
-  ScaleTemp = dsqrt((3.d0*TotAtom - 3.d0)*Temp/(sumv2))
-  v = v*ScaleTemp             ! velocity scaling
+    ScaleTemp = dsqrt((3.d0*TotAtom - 3.d0)*Temp/(sumv2))
+    v = v*ScaleTemp             ! velocity scaling
 
  !recalculate temperature  ---  for checking 
 
@@ -81,6 +81,6 @@ subroutine initialize(TotAtom,CoorFileName,Temp,Mass,Box,r,v,AtomLabel)
 ! write(*,*) "INIT VELOCITIES"
 ! write(*,"(3E20.12)") (v(i,:),i=1,2) 
 
-  return
+    return
 end subroutine initialize
 

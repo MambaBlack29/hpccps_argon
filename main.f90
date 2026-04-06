@@ -18,6 +18,7 @@ end module
 program mainprogram
     use general
     use conversions
+    use omp_lib
     implicit none
 
     character(len=300) :: file1
@@ -99,7 +100,8 @@ program mainprogram
 
     write(5000, *) "       Step              PE              KE                TE "
 
-    call cpu_time(t0)
+    ! call cpu_time(t0)
+    t0 = omp_get_wtime()
     t = 0.d0
     md_step = 0
     do while (md_step < NoMDStep)
@@ -121,7 +123,8 @@ program mainprogram
 
     enddo
 
-    call cpu_time(t1)
+    ! call cpu_time(t1)
+    t1 = omp_get_wtime()
     write(5000, "(a,2x,f10.2)") "Time (in sec): ", t1 - t0
 end program mainprogram 
  
