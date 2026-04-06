@@ -1,6 +1,6 @@
 FC = gfortran 
 FFLAGS = -O3 
-TARGET = mdrun 
+TARGET = mdrun.run
 
 OBJECTS = main.o init.o force.o integrate.o temp.o 
 
@@ -12,5 +12,5 @@ $(TARGET) : $(OBJECTS)
 .PHONY :  clean 
 
 clean : 
-	rm -f *.o *.mod 
+	rm -f *.o *.mod *.run
 
