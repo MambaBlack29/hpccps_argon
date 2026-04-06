@@ -1,6 +1,6 @@
 FC = gfortran 
 FFLAGS = -O3 -fopenmp
-TARGET = mdrun 
+TARGET = mdrun.run
 
 OBJECTS = main.o init.o force.o integrate.o temp.o 
 
