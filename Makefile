@@ -2,7 +2,7 @@ FC = gfortran
 FFLAGS = -O3 
 TARGET = mdrun.run
 
-OBJECTS = main.o init.o force.o integrate.o temp.o 
+OBJECTS = main.o init.o force.o integrate.o temp.o verlet.o
 
 $(TARGET) : $(OBJECTS) 
 	$(FC) $(FFLAGS) -o $@ $^  
