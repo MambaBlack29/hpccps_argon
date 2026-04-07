@@ -29,16 +29,6 @@ subroutine integrate(t, EQMDStep, TotAtom, Mass, Box, Temp, Rcut, Sig, Eps, Atom
         v(i, :) = v(i, :)*ScaleTemp + 0.5d0*TimeStep*(Force(i, :)/Mass)                      !  v(t + dt/2 )
     enddo
 
-!  if(Step==EQMDSTEP) then         ! shifting momentum to zero  
-!    sumv(1)=sum(v(:,1)) 
-!    sumv(2)=sum(v(:,2)) 
-!    sumv(3)=sum(v(:,3)) 
-!    sumv=sumv/real(TotAtom) 
-!    do i=1,TotAtom
-!      v(i,:)=v(i,:)-sumv 
-!    enddo
-!  endif
-
     call force_calc(TotAtom, Box, Rcut, r, Sig, Eps, Force, PE, vlist, nvlist)
 
     sumv = 0.d0
@@ -52,7 +42,7 @@ subroutine integrate(t, EQMDStep, TotAtom, Mass, Box, Temp, Rcut, Sig, Eps, Atom
     Tins = (sumv2)/real(3.d0*TotAtom - 3.d0)
     KE = sumv2/real(2.d0)
 
- ! checking whether coordinates are outside the box 
+    ! checking whether coordinates are outside the box 
 
     do i = 1, TotAtom
         do j = 1, 3
@@ -64,20 +54,6 @@ subroutine integrate(t, EQMDStep, TotAtom, Mass, Box, Temp, Rcut, Sig, Eps, Atom
         enddo
     enddo
 
-! write(*,*) "VELOCITIES"  
-! write(206,"(I8,6F20.12)") Step,Mass*sumv 
-! write(*,*)  "Temperature", Tins*TempConv
-
-
-! writing Trajectory  
-! open(unit=201,file='md.traj',action='write') 
-! write(201,"(I5)") TotAtom 
-! write(201,*) Step+1 
-! write(5000,*) 
-! write(*,*) "STEP = ",Step+1
-! do i=1,TotAtom
-!   write(201,"(a5,2x,3F12.4)") AtomLabel(i),r(i,:)*LengthConv
-! enddo
   return
 end subroutine integrate
 

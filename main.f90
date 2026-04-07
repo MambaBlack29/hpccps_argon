@@ -102,7 +102,6 @@ program mainprogram
     call new_verlet(TotAtom, Box, Rcut, r, vlist, nvlist)
     call force_calc(TotAtom, Box, Rcut, r, Sig, Eps, Force, PE, vlist, nvlist)
 
-
     write(5000, "(a20,F18.5)") "Initial potential energy = ", PE*EnerConv
 
     write(5000, *) "       Step              PE              KE                TE "
@@ -111,9 +110,6 @@ program mainprogram
     t = 0.d0
     md_step = 0
     do while (md_step < NoMDStep)
-
-        !  call force_calc(TotAtom,Box,Rcut,r,Sig,Eps,Force,PE)                    ! calculates force
-
         ! remake verlet list every 15 steps
         if(mod(md_step, vsteps) == 0) then
             call new_verlet(TotAtom, Box, Rcut, r, vlist, nvlist)
@@ -125,13 +121,7 @@ program mainprogram
 
         write(5000, "(I10,2x,3F18.5)") md_step, PE*EnerConv, KE*EnerConv, (KE+PE)*EnerConv
 
-        !  write(*,*) "POTENTIAL ENERGY = ", PE*EnerConv
-        !  write(*,*) "KINETIC ENERGY = ", KE*EnerConv
-        !  write(*,*) "TOTAL ENERGY = ", (KE+PE)*EnerConv
-
         t = t + TimeStep
-        !   call sample
-
     enddo
 
     call cpu_time(t1)
