@@ -15,7 +15,7 @@ type  'make clean'
 		5400		63.4818
 		12800		84.6420
 
-3. To run the simulation, type the following: './mdrun md.input' 
+3. To run the simulation, type the following: './mdrun md.input' ...
 
 4. To know the runtime, check the last line of md.out file 
 
