@@ -1,40 +1,93 @@
-# Argon MD Report
+# Verlet List Assignment Report
 
-## Code Structure Change
+| Name | Roll Number |
+| --- | --- |
+| Aryan Agarwal | 22EC39006 |
+| Arkaprova Haldar | 22EC39005 |
+| Ayush Prasad | 22EC39008 |
+| Palla Sri Harsha Vardhan | 22MA10040 |
 
-The current codebase introduces a dedicated Verlet neighbor-list layer in [verlet.f90](verlet.f90), which changes the flow of the molecular dynamics program from direct pairwise force evaluation to a neighbor-list-driven design.
 
-In the previous structure at commit 88c7dc3fcda37f8c1815edd33976efbd2abf3cb4, the simulation was organized more simply:
 
-- [main.f90](main.f90) handled the main simulation loop.
-- [integrate.f90](integrate.f90) advanced positions and velocities.
-- [force.f90](force.f90) computed Lennard-Jones forces with a full pairwise scan over all atoms.
-- There was no separate verlet.f90 file or reusable neighbor-list stage.
+## Methodological Change
 
-In the current structure, the force calculation is separated from the neighbor search:
+The simulation now uses a Verlet neighbor list to reduce the cost of force evaluation. Earlier, the molecular dynamics loop advanced the system and then evaluated Lennard-Jones interactions through a direct all-pairs scan. The revised formulation separates neighbor searching from force evaluation, so the interaction kernel operates only on preselected neighbors.
 
-- [init.f90](init.f90) initializes the atom positions and velocities.
-- [verlet.f90](verlet.f90) builds the neighbor list with new_verlet, using the minimum-image convention with periodic boundaries.
-- [main.f90](main.f90) allocates and refreshes the neighbor-list arrays and rebuilds the Verlet list every 15 steps.
-- [integrate.f90](integrate.f90) advances the system state and then calls the force update using the current neighbor list.
-- [force.f90](force.f90) evaluates the Lennard-Jones interaction only for neighbors stored in the list.
 
-This restructuring reduces repeated all-pairs work and makes the neighbor-list logic explicit and reusable. The fixed-size list buffers and periodic rebuild cadence also make the data flow easier to follow during the simulation.
 
-## Results From plot_results.py
+- The system is initialized and velocities are assigned.
+- `new_verlet` builds the neighbor list after `initialize` outside the `main` loop.
+- `new_verlet` is called again whenever the rebuild interval `vsteps` is reached, before the `integrate` step inside the `main` loop.
+- `force_calc` uses the stored neighbor list instead of scanning all pairs.
 
-The plotting script compares serial wall time for three Verlet update intervals. The table below reproduces the values used in the plot. The baseline without Verlet is defined in the script as well, but that line is currently commented out in the figure generation.
+This makes the neighbor-list update explicit rather than implicit. It also reduces the force work from global pairwise checking to a local neighborhood search.
+
+## Parameterization of the Neighbor List
+
+The cutoff radius and the Verlet radius were taken to be equal, so that the neighbor-list search and the force cutoff use the same interaction range:
+
+$$
+r_c = r_v = 10\ \mathrm{\AA}
+$$
+
+Using the three simulation sizes, the density estimate is
+
+$$
+\rho = \frac{N}{L^3}
+$$
+
+with the corresponding values:
+
+| Configuration | $N$ | $L$ (Å) | $\rho$ (atoms Å$^{-3}$) | $k_{\mathrm{est}}$ |
+| --- | ---: | ---: | ---: | ---: |
+| 1600 atoms | 1600 | 42.3212 | $2.11 \times 10^{-2}$ | 88.4 |
+| 5400 atoms | 5400 | 63.4818 | $2.11 \times 10^{-2}$ | 88.4 |
+| 12800 atoms | 12800 | 84.6420 | $2.11 \times 10^{-2}$ | 88.4 |
+
+The neighbor-count estimate is obtained from
+
+$$
+k_{\mathrm{est}} = \rho \frac{4}{3}\pi r_v^3
+\approx \left(2.11 \times 10^{-2}\right) \frac{4}{3}\pi (10)^3
+\approx 88.4
+$$
+
+The chosen capacity, $k = 200$, is therefore a conservative upper bound for the observed density.
+
+## Results From the Wall-Time Study
+
+The timing results compare direct force evaluation with three values of the rebuild interval `vsteps`.
 
 | Method | 1600 points | 5400 points | 12800 points |
 | --- | ---: | ---: | ---: |
-| Without Verlet | 7.98 | 77.56 | 427.49 |
-| With Verlet, update every 10 steps | 2.37 | 10.75 | 50.64 |
-| With Verlet, update every 15 steps | 1.79 | 8.34 | 34.88 |
-| With Verlet, update every 20 steps | 1.60 | 6.92 | 28.22 |
+| Direct pairwise evaluation | 7.98 | 77.56 | 427.49 |
+| Verlet list, smaller vsteps | 2.37 | 10.75 | 50.64 |
+| Verlet list, intermediate vsteps | 1.79 | 8.34 | 34.88 |
+| Verlet list, larger vsteps | 1.60 | 6.92 | 28.22 |
+
+The Verlet-based formulation is consistently faster, and the advantage increases with system size.
+
+## Observations
+
+The speedup is consistent with the underlying algorithmic cost. The direct formulation scales approximately as
+
+$$
+O(N^2)
+$$
+
+because each atom can, in principle, be compared with every other atom. In contrast, the Verlet approach reduces the force evaluation to approximately
+
+$$
+O(Nk)
+$$
+
+where `k` is the average number of stored neighbors within the cutoff region. Since `k` is bounded and much smaller than `N`, the force-evaluation cost is substantially lower. The neighbor-list rebuild cost is amortized over multiple steps and remains smaller than repeated direct all-pairs evaluation.
+
+Among the tested cases, the larger rebuild interval produced the lowest wall time. The algorithm still uses the same physical cutoff, since `r_c = r_v`.
 
 ## Figures
 
-Figure 1 shows the full comparison, including the non-Verlet baseline. Figure 2 zooms in on the Verlet-enabled runs so the timing differences between update intervals are easier to see.
+The first figure compares the direct and Verlet-based timings. The second figure isolates the Verlet-enabled cases, making the differences among the tested `vsteps` values easier to see.
 
 ![Figure 1](Figure_1.png)
 
