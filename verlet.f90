@@ -1,16 +1,19 @@
-subroutine new_verlet(TotAtom,Box,Rcut,r, vlist, nvlist)
+subroutine new_verlet(TotAtom,Box,Rcut,r, vlist, nvlist, rlist, rskin)
     use general, only: dp, atom1, atom2
     implicit none
     integer, intent(in) :: TotAtom
     real(kind=dp), intent(in) :: Box, Rcut
     real(kind=dp), intent(in) :: r(TotAtom, 3)
-    integer, intent(out) :: vlist(TotAtom, 200), nvlist(TotAtom)
+    real(kind=dp), intent(out) :: rlist(TotAtom, 3)
+    integer, intent(out) :: vlist(TotAtom, 500), nvlist(TotAtom)
+    real(kind=dp), intent(in) :: rskin
     real(kind=dp) :: r2, dr(3), R2cut
 
-    R2cut = Rcut*Rcut
+    R2cut = (Rcut+rskin)*(Rcut+rskin)
 
     nvlist = 0
     vlist = 0
+    rlist = r
     do atom1 = 1, TotAtom - 1
         do atom2 = atom1 + 1, TotAtom
             dr = r(atom1, :) - r(atom2, :)

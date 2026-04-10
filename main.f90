@@ -21,7 +21,7 @@ program mainprogram
     implicit none
 
     character(len=300) :: file1
-    real(kind=dp), allocatable :: r(:, :), rm(:, :), v(:, :)
+    real(kind=dp), allocatable :: r(:, :), rm(:, :), v(:, :), rlist(:, :)
     real(kind=dp), allocatable :: Force(:, :)
     character(len=5), allocatable :: AtomLabel(:)
     real(kind=dp) :: PE, KE
@@ -29,6 +29,7 @@ program mainprogram
     ! verlet list variables
     integer, allocatable:: vlist(:, :), nvlist(:)
     integer, parameter :: vsteps = 15
+    real(kind=dp) :: rskin = 5
 
     real(kind=dp) :: t, t1, t0
     character(len=300) :: CoorFileName
@@ -84,6 +85,7 @@ program mainprogram
     Sig = Sig/LengthConv
     Rcut = Rcut/LengthConv
     Box = Box/LengthConv
+    rskin = 0.3 * Rcut
     Mass = Mass*Mp2Me       ! in au
     Temp = Temp/TempConv
 
@@ -91,15 +93,15 @@ program mainprogram
 
     TotAtom = NMol*NAtom
 
-    allocate(r(TotAtom, 3), rm(TotAtom, 3), v(TotAtom, 3))
+    allocate(r(TotAtom, 3), rm(TotAtom, 3), v(TotAtom, 3), rlist(TotAtom, 3))
     allocate(Force(TotAtom, 3))
     allocate(AtomLabel(TotAtom))
 
     ! verlist allocations
-    allocate(vlist(TotAtom, 200), nvlist(TotAtom))
+    allocate(vlist(TotAtom, 500), nvlist(TotAtom))
 
     call initialize(TotAtom, CoorFileName, Temp, Mass, Box, r, v, AtomLabel)     ! get initial coordinates and velocities
-    call new_verlet(TotAtom, Box, Rcut, r, vlist, nvlist)
+    call new_verlet(TotAtom, Box, Rcut, r, vlist, nvlist, rlist, rskin)
     call force_calc(TotAtom, Box, Rcut, r, Sig, Eps, Force, PE, vlist, nvlist)
 
     write(5000, "(a20,F18.5)") "Initial potential energy = ", PE*EnerConv
@@ -110,9 +112,8 @@ program mainprogram
     t = 0.d0
     md_step = 0
     do while (md_step < NoMDStep)
-        ! remake verlet list every 15 steps
-        if(mod(md_step, vsteps) == 0) then
-            call new_verlet(TotAtom, Box, Rcut, r, vlist, nvlist)
+        if ( maxval( sum( ( (r - rlist) - Box*anint((r - rlist)/Box) )**2, dim=2 ) ) > (0.5d0*rskin)**2 ) then
+            call new_verlet(TotAtom, Box, Rcut, r, vlist, nvlist, rlist, rskin)
         end if
 
         call integrate(t, EQMDStep, TotAtom, Mass, Box, Temp, Rcut, Sig, Eps, AtomLabel, TimeStep, r, v, Force, KE, PE, vlist, nvlist)
