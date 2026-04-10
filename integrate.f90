@@ -1,10 +1,10 @@
-subroutine integrate(t, EQMDStep, TotAtom, Mass, Box, Temp, Rcut, Sig, Eps, AtomLabel, TimeStep, r, v, Force, KE, PE, vlist, nvlist)
+subroutine integrate(t, EQMDStep, TotAtom, Mass, Box, Temp, Rcut, Sig, Eps, AtomLabel, TimeStep, r, v, Force, KE, PE, vlist, nvlist, rlist, rskin)
     use general, only: dp
     use conversions
     implicit none
     integer :: i, j, TotAtom, Step, EQMDStep
     real(kind=dp) :: t, TimeStep2, ScaleTemp
-    real(kind=dp), intent(in) :: Box, Mass, Temp, Rcut, Eps, Sig
+    real(kind=dp), intent(in) :: Box, Mass, Temp, Rcut, Eps, Sig, rskin
     real(kind=dp) :: sumv(3), sumv2, Tins, TimeStep
     character(len=5) :: AtomLabel(TotAtom)
 
@@ -12,7 +12,8 @@ subroutine integrate(t, EQMDStep, TotAtom, Mass, Box, Temp, Rcut, Sig, Eps, Atom
     real(kind=dp), intent(inout) :: r(TotAtom, 3), v(TotAtom, 3), Force(TotAtom, 3)
 
     ! verlet list variables
-    integer, intent(in) :: vlist(TotAtom, 200), nvlist(TotAtom)
+    integer, intent(inout) :: vlist(TotAtom, 500), nvlist(TotAtom)
+    real(kind=dp), intent(inout) :: rlist(TotAtom, 3)
 
     Step = int(t/TimeStep)
     TimeStep2 = TimeStep*TimeStep
@@ -28,6 +29,10 @@ subroutine integrate(t, EQMDStep, TotAtom, Mass, Box, Temp, Rcut, Sig, Eps, Atom
         endif
         v(i, :) = v(i, :)*ScaleTemp + 0.5d0*TimeStep*(Force(i, :)/Mass)                      !  v(t + dt/2 )
     enddo
+
+    if ( maxval( sum( ( (r - rlist) - Box*anint((r - rlist)/Box) )**2, dim=2 ) ) > (0.5d0*rskin)**2 ) then
+            call new_verlet(TotAtom, Box, Rcut, r, vlist, nvlist, rlist, rskin)
+    end if
 
     call force_calc(TotAtom, Box, Rcut, r, Sig, Eps, Force, PE, vlist, nvlist)
 

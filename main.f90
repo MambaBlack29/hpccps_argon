@@ -112,11 +112,7 @@ program mainprogram
     t = 0.d0
     md_step = 0
     do while (md_step < NoMDStep)
-        if ( maxval( sum( ( (r - rlist) - Box*anint((r - rlist)/Box) )**2, dim=2 ) ) > (0.5d0*rskin)**2 ) then
-            call new_verlet(TotAtom, Box, Rcut, r, vlist, nvlist, rlist, rskin)
-        end if
-
-        call integrate(t, EQMDStep, TotAtom, Mass, Box, Temp, Rcut, Sig, Eps, AtomLabel, TimeStep, r, v, Force, KE, PE, vlist, nvlist)
+        call integrate(t, EQMDStep, TotAtom, Mass, Box, Temp, Rcut, Sig, Eps, AtomLabel, TimeStep, r, v, Force, KE, PE, vlist, nvlist, rlist, rskin)
 
         md_step = md_step + 1
 
